@@ -1,0 +1,10 @@
+# golangci-lint の設定。PostToolUse フック（.claude/hooks/format.sh）からも参照される。
+run:
+  timeout: 2m
+
+linters-settings:
+  errcheck:
+    # HTTP レスポンスへの JSON 書き込みは戻り値を扱わない実装方針のため除外する。
+    # （書き込み失敗時にはステータス送出済みで、返せるエラーが無い）
+    exclude-functions:
+      - (*encoding/json.Encoder).Encode
