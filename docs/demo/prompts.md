@@ -15,6 +15,53 @@ API サーバは `cd api && go run .`（`http://localhost:8080/api/orders`）、
 Web は `cd web && npm run dev`（`http://localhost:3000/orders`）。
 8080 のルートパスや末尾スラッシュは未登録のため `404 page not found` になる。
 
+## ログと panic の確認方法
+
+このアプリはログファイルを出力しない（`log.Printf` と panic のスタックトレースは標準エラーのみ）。
+デモで panic を見せるなら、サーバをログを残す形で起動しておく。
+
+```bash
+cd api && go run . 2>&1 | tee /tmp/api.log
+```
+
+panic は次の3か所で確認できる。
+
+1. **`go test` の出力**（Phase 4 の見せ場。これが一番確実）
+
+   ```
+   --- FAIL: TestListOrders_Canceled (0.00s)
+   panic: runtime error: slice bounds out of range [:20] with capacity 3 [recovered]
+       ...
+   example.com/order-app/api/service.(*OrderService).ListOrders(...)
+       .../api/service/order.go:21
+   example.com/order-app/api/handler.(*OrderHandler).ListOrders(...)
+       .../api/handler/orders.go:54
+   ```
+
+   `httptest` + `mux.ServeHTTP` を直接呼ぶテストでは `http.Server` の panic 回復が挟まらないため、
+   panic がそのままテストの失敗として表面化する（`go test` の終了コードは 1）。
+
+2. **サーバのログ**（起動したターミナル、または上の `tee` 先）
+
+   ```
+   http: panic serving [::1]:33700: runtime error: slice bounds out of range [:40] with capacity 24
+   goroutine 52 [running]:
+   ...
+       /home/…/api/service/order.go:21
+       /home/…/api/handler/orders.go:54
+   ```
+
+   `net/http` は接続単位で panic を回復してログに出すので、**サーバは落ちない**。
+
+3. **クライアント側の症状**
+
+   ```bash
+   curl -i "http://localhost:8080/api/orders?limit=100"
+   # → レスポンス本体が空（curl: (52) Empty reply from server / 終了コード 52）
+   ```
+
+   ブラウザだと「ページが動作していません」等になり原因が見えないので、ログか `go test` で確認する。
+
 ## Phase 1: 計画立案（Plan Mode）
 
 `Shift+Tab` を2回押して Plan Mode に入ってから貼る。

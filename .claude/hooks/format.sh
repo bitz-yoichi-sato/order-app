@@ -42,7 +42,15 @@ case "$file_path" in
     done
     [ -f "$module_dir/go.mod" ] || exit 0
 
-    if ! (cd "$module_dir" && golangci-lint run "${abs_path#"$module_dir"/}"); then
+    # 編集ファイル単体ではなく、そのパッケージ単位で lint する。
+    # 単一ファイル指定では同一パッケージの他ファイルが見えず、
+    # `undefined: newTestMux (typecheck)` のような誤検知で編集がブロックされる。
+    pkg_dir="./$(dirname "${abs_path#"$module_dir"/}")"
+
+    # golangci-lint は検出結果を stdout に出すが、exit 2 で Claude に渡るのは stderr。
+    # 出力をまとめて stderr に流し、ブロック理由が伝わるようにする。
+    if ! lint_output="$(cd "$module_dir" && golangci-lint run "$pkg_dir" 2>&1)"; then
+      printf '%s\n' "$lint_output" >&2
       exit 2
     fi
     ;;
