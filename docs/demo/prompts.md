@@ -7,11 +7,11 @@ Claude が文字列リテラルを取り違える可能性がある）。
 
 ```bash
 cd api && go test ./... -race   # ok になること
-golangci-lint run ./...          # 何も出ないこと（exit 0）
+cd api && golangci-lint run ./...          # 何も出ないこと（exit 0）
 git status                       # クリーンにしておく
 ```
 
-API サーバは `cd api && go run .`（`http://localhost:8080/api/orders`）、
+API サーバは `cd api && go run . 2>&1 | tee /tmp/api.log`（`http://localhost:8080/api/orders`）、
 Web は `cd web && npm run dev`（`http://localhost:3000/orders`）。
 8080 のルートパスや末尾スラッシュは未登録のため `404 page not found` になる。
 
