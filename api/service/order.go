@@ -15,10 +15,32 @@ func NewOrderService(repo *repository.OrderRepository) *OrderService {
 	return &OrderService{repo: repo}
 }
 
-// ListOrders は limit/offset に基づき注文一覧と総件数を返す。
-func (s *OrderService) ListOrders(limit, offset int) ([]model.Order, int) {
+// ListOrders は status/limit/offset に基づき注文一覧と該当件数を返す。
+// status が空文字の場合は絞り込みを行わない。
+func (s *OrderService) ListOrders(status string, limit, offset int) ([]model.Order, int) {
 	orders := s.repo.List()
-	return orders[offset : offset+limit], len(orders)
+
+	if status != "" {
+		filtered := make([]model.Order, 0, len(orders))
+		for _, o := range orders {
+			if o.Status == status {
+				filtered = append(filtered, o)
+			}
+		}
+		orders = filtered
+	}
+
+	total := len(orders)
+
+	if offset > total {
+		offset = total
+	}
+	end := offset + limit
+	if end > total {
+		end = total
+	}
+
+	return orders[offset:end], total
 }
 
 // GetOrder は指定 ID の注文を返す。

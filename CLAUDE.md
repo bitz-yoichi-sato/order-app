@@ -16,6 +16,7 @@ Go(API) + Next.js(Web) の社内向けシステム。
 ## 規約
 - エラーは `fmt.Errorf("...: %w", err)` でラップする。
 - コミットは Conventional Commits に従う。
+- 出力は日本語とする。
 
 ## 禁止事項
 - `api/gen/` は自動生成。手で編集しない。
