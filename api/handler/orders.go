@@ -14,13 +14,6 @@ const (
 	defaultOffset = 0
 )
 
-// validStatuses は status クエリパラメータに指定できる値。
-var validStatuses = map[string]bool{
-	"pending":  true,
-	"shipped":  true,
-	"canceled": true,
-}
-
 // OrderHandler は注文関連の HTTP エンドポイントを提供する。
 type OrderHandler struct {
 	svc *service.OrderService
@@ -44,14 +37,6 @@ type ordersResponse struct {
 
 // ListOrders は GET /api/orders を処理する。
 func (h *OrderHandler) ListOrders(w http.ResponseWriter, r *http.Request) {
-	status := r.URL.Query().Get("status")
-	if status != "" && !validStatuses[status] {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "invalid parameter"})
-		return
-	}
-
 	limit := defaultLimit
 	offset := defaultOffset
 
@@ -66,7 +51,7 @@ func (h *OrderHandler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	orders, total := h.svc.ListOrders(status, limit, offset)
+	orders, total := h.svc.ListOrders(limit, offset)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(ordersResponse{Orders: orders, Total: total})
